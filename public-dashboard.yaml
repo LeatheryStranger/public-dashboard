@@ -1,0 +1,711 @@
+esphome:
+  name: public-dashboard
+  comment: Public E-paper dashboard
+  includes:
+    - OtherLibs.h
+    
+esp32:
+  board: esp32dev
+  framework:
+    type: arduino
+
+substitutions:
+  wifi_size: 24x24
+  weather_size: 150x150
+  weather_size_small: 50x50
+  washdry_size: 124x124
+  trash_size: 60x60
+  ha_size: ${wifi_size}
+  
+globals:
+  - id: weather_x
+    type: int
+    initial_value: '60'
+  - id: weather_y
+    type: int
+    initial_value: '30'
+  - id: forecast1_x
+    type: int
+    initial_value: '175'
+  - id: forecast1_y
+    type: int
+    initial_value: '170'
+  - id: not_bar_x
+    type: int
+    initial_value: '755'
+  - id: not_bar_y
+    type: int
+    initial_value: '45'
+  - id: sensor_count
+    type: int
+    initial_value: '5'
+  - id: screen_l
+    type: int
+    initial_value: '20'
+  - id: screen_r
+    type: int
+    initial_value: '780'
+  - id: screen_t
+    type: int
+    initial_value: '45'
+  - id: notif_t
+    type: int
+    initial_value: '275'
+    
+wifi:
+  ssid: !secret wifiSSID
+  password: !secret wifiPASS
+  
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "Kitchen Dashboard"
+    password: "HELQfdCXAqPQ"
+
+captive_portal:
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+
+ota:
+    
+time:
+  - platform: homeassistant
+    id: homeassistant_time
+
+<<: !include 'commonyaml/icons.yaml'
+
+
+font:
+
+  - file: "fonts/arial.ttf"
+    id: segoe
+    size: 10
+    
+  - file: "fonts/segoe-ui.ttf"
+    id: segoe_large
+    size: 28
+
+  - file: "fonts/segoe-ui.ttf"
+    id: segoe_med
+    size: 22
+  
+  - file: "fonts/segoe-ui-bold.ttf"
+    id: segoe_bold
+    size: 64
+    
+    
+text_sensor:
+
+  - platform: homeassistant
+    name: "Weather"
+    entity_id: weather.home
+    id: weather
+    internal: true
+    on_value:
+      then:
+        - component.update: epaper
+        - logger.log: "weather updated"
+  
+  - platform: homeassistant
+    name: "Tomorrow's Forecast"
+    entity_id: sensor.forecast_1
+    id: forecast_1
+    internal: true
+    on_value:
+      then:
+        - component.update: epaper
+        - logger.log: "forecast_1 updated"
+    
+  - platform: homeassistant
+    name: "2 Day Forecast"
+    entity_id: sensor.forecast_2
+    id: forecast_2
+    internal: true
+    on_value:
+      then:
+        - component.update: epaper
+        - logger.log: "forecast_2 updated"
+  
+  - platform: homeassistant
+    name: "3 Day Forecast"
+    entity_id: sensor.forecast_3
+    id: forecast_3
+    internal: true
+    on_value:
+      then:
+        - component.update: epaper
+        - logger.log: "forecast_3 updated"
+
+  - platform: homeassistant
+    name: "Town 1st Headline"
+    entity_id: sensor.town_headline_1
+    id: town_headline_1
+    internal: true
+    on_value:
+      then:
+        - display.page.show: town_news
+
+        - component.update: epaper
+        - logger.log: "headlines updated"
+
+  - platform: homeassistant
+    name: "Town 2nd Headline"
+    entity_id: sensor.town_headline_2
+    id: town_headline_2
+    internal: true
+
+  - platform: homeassistant
+    name: "Town 3rd Headline"
+    entity_id: sensor.town_headline_3
+    id: town_headline_3
+    internal: true
+
+binary_sensor:
+
+  - platform: status
+    name: "connected"
+    id: uplink
+    internal: true
+  
+  - platform: homeassistant
+    name: "Washer Switch"
+    entity_id: binary_sensor.washer_state
+    id: washer_state
+    internal: true
+    on_press:
+      then:
+        - binary_sensor.template.publish:
+            id: clothes_washed
+            state: OFF
+        - script.stop: washed_timer
+    on_release:
+      then:
+        - binary_sensor.template.publish:
+            id: clothes_washed
+            state: ON
+
+          
+  - platform: homeassistant
+    name: "Dryer State"
+    entity_id: binary_sensor.dryer_state
+    id: dryer_state
+    internal: true
+    on_press:
+      then:
+        - binary_sensor.template.publish:
+            id: clothes_dry
+            state: OFF
+        - script.stop: dry_timer
+    on_release:
+      then:
+        - binary_sensor.template.publish:
+            id: clothes_dry
+            state: ON
+
+  - platform: homeassistant
+    name: "Trash Day"
+    entity_id: binary_sensor.trash_day
+    id: trash_day
+    internal: true
+
+  - platform: homeassistant
+    name: "Recycling Day"
+    entity_id: binary_sensor.recycling_day
+    id: recycle_day
+    internal: true
+
+  - platform: homeassistant
+    name: "High Pollen Alert"
+    entity_id: binary_sensor.high_pollen_alert
+    id: high_pollen_alert
+    internal: true
+
+  - platform: template
+    name: "Clothes Washed"
+    id: clothes_washed
+    on_press:
+      then:
+        - script.execute: washed_timer
+
+  - platform: template
+    name: "Clothes Dry"
+    id: clothes_dry
+    on_press:
+      then:
+        - script.execute: dry_timer
+
+
+
+sensor:
+
+  - platform: wifi_signal
+    name: "Wifi Signal Strength"
+    update_interval: 120s
+    id: wifi_strength
+    
+  - platform: homeassistant
+    name: "Kitchen Temperature"
+    entity_id: sensor.kitchen_env_temp
+    id: kitchen_temp
+    internal: true
+    
+  - platform: homeassistant
+    name: "Outdoor Temperature"
+    entity_id: sensor.home_realfeel_temperature
+    id: outdoor_temp
+    internal: true
+    
+  - platform: homeassistant
+    name: "Tomorrow Outdoor Temperature"
+    entity_id: sensor.forecast_1
+    attribute: temperature
+    id: outdoor_forecast1
+    internal: true
+    
+  - platform: homeassistant
+    name: "2 Day Outdoor Temperature"
+    entity_id: sensor.forecast_2
+    attribute: temperature
+    id: outdoor_forecast2
+    internal: true
+    
+  - platform: homeassistant
+    name: "3 Day Outdoor Temperature"
+    entity_id: sensor.forecast_3
+    attribute: temperature
+    id: outdoor_forecast3
+    internal: true
+    
+
+script:
+  - id: washed_timer
+    then:
+      - delay: 7200s
+      - binary_sensor.template.publish:
+          id: clothes_washed
+          state: OFF
+
+  - id: dry_timer
+    then:
+      - delay: 7200s
+      - binary_sensor.template.publish:
+          id: clothes_dry
+          state: OFF
+
+spi:
+  clk_pin: GPIO13
+  mosi_pin: GPIO14
+  miso_pin: GPIO12
+  
+display:
+  - platform: waveshare_epaper  #800×480
+    id: epaper
+    cs_pin: GPIO15
+    dc_pin: GPIO27
+    busy_pin: GPIO25
+    reset_pin: GPIO26
+    model: 7.50inV2
+    update_interval: 1min
+    pages:
+      - id: notifications
+        lambda: |- 
+          /////////////////
+          //WEATHER ICONS//
+          /////////////////
+          
+          //large weather icon map//
+          std::map<std::string, esphome::display::Image*> curwthr;
+          curwthr["clear-night"] = id(clear_night);
+          curwthr["cloudy"] = id(cloudy);
+          curwthr["fog"] = id(fog);
+          curwthr["hail"] = id(hail);
+          curwthr["lightning"] = id(lightning);
+          curwthr["lightning-rainy"] = id(lightning_rainy);
+          curwthr["partlycloudy"] = id(partly_cloudy);
+          curwthr["pouring"] = id(pouring);
+          curwthr["rainy"] = id(rainy);
+          curwthr["snowy"] = id(snowy);
+          curwthr["snowy-rainy"] = id(snowy_rainy);
+          curwthr["sunny"] = id(sunny);
+          curwthr["windy"] = id(windy);
+          curwthr["windy-varient"] = id(windy);
+          
+          //small weather icon map//
+          std::map<std::string, esphome::display::Image*> forwthr;
+          forwthr["clear-night"] = id(clear_night_small);
+          forwthr["cloudy"] = id(cloudy_small);
+          forwthr["fog"] = id(fog_small);
+          forwthr["hail"] = id(hail_small);
+          forwthr["lightning"] = id(lightning_small);
+          forwthr["lightning-rainy"] = id(lightning_rainy_small);
+          forwthr["partlycloudy"] = id(partly_cloudy_small);
+          forwthr["pouring"] = id(pouring_small);
+          forwthr["rainy"] = id(rainy_small);
+          forwthr["snowy"] = id(snowy_small);
+          forwthr["snowy-rainy"] = id(snowy_rainy_small);
+          forwthr["sunny"] = id(sunny_small);
+          forwthr["windy"] = id(windy_small);
+          forwthr["windy-varient"] = id(windy_small);
+          
+          /////////////////////
+          //Notification Maps//
+          /////////////////////
+          
+          //notification sensor map//
+          esphome::binary_sensor::BinarySensor* notif_sensor[id(sensor_count)] = {
+            trash_day,
+            recycle_day,
+            clothes_washed,
+            clothes_dry,
+            high_pollen_alert,
+          };
+
+          //notification phrasing//
+          std::string notif_text[id(sensor_count)] = {
+            "Trash Day",
+            "Recycling Day",
+            "Clothes Washed",
+            "Clothes Dry",
+            "High Pollen",
+          };
+
+          //notification icons//
+          esphome::display::Image* notif_icon[id(sensor_count)] = {
+            trash,
+            recycle,
+            washer_on,
+            dryer_on,
+            pollen,
+          };
+          
+          ////////////////////
+          //DISPLAY PRINTING//
+          ////////////////////
+
+          //TIME AND DATE//
+          it.strftime((id(weather_x)+160), (id(weather_y)+100), id(segoe_bold), TextAlign::BOTTOM_LEFT, "%I:%M", id(homeassistant_time).now());
+          it.strftime((id(weather_x)+160), (id(weather_y)+85), id(segoe_large), TextAlign::TOP_LEFT, "%A, %b %d", id(homeassistant_time).now());
+        
+          //NOTIFICATION AREA DEFINITION//
+          it.printf(20, 275, id(segoe_large), TextAlign::CENTER_LEFT, "Notifications");
+          it.line(id(screen_l)+165, id(notif_t)-1, id(screen_r), id(notif_t)-1);
+          it.line(id(screen_l)+165, id(notif_t), id(screen_r), id(notif_t));
+
+          //TEMPERATURE//
+          it.printf(id(screen_r)-300, (id(weather_y)+125), id(segoe_bold), TextAlign::BOTTOM_LEFT, "In:");
+          it.printf(id(screen_r)-20, (id(weather_y)+125), id(segoe_bold), TextAlign::BOTTOM_RIGHT, "%.0f°F", id(kitchen_temp).state);
+          it.printf(id(screen_r)-300, id(forecast1_y)-30, id(segoe_bold), TextAlign::TOP_LEFT, "Out:");
+          it.printf(id(screen_r)-20, id(forecast1_y)-30, id(segoe_bold), TextAlign::TOP_RIGHT, "%.0f°F", id(outdoor_temp).state);
+          
+          
+          //NOTIFICATION BAR//
+          
+          
+          //Wifi Icon
+          if (id(wifi_strength).state < -70) {
+          it.image(id(not_bar_x), id(not_bar_y), id(wifi_1));
+          } if (id(wifi_strength).state < -60) {
+            it.image(id(not_bar_x), id(not_bar_y), id(wifi_2));
+          } if (id(wifi_strength).state < -50) {
+            it.image(id(not_bar_x), id(not_bar_y), id(wifi_3));
+          } else {
+            it.image(id(not_bar_x), id(not_bar_y), id(wifi_0));
+          }
+          
+          //homeassistant uplink
+          if (id(uplink)) {
+            it.image(id(not_bar_x)-29, id(not_bar_y), id(ha_icon));
+          }  else {
+            it.image(id(not_bar_x)-29, id(not_bar_y), id(ha_alert));
+          }
+          
+
+        
+          ///////////////
+          //WEATHER SECTION
+          //curweather - large icon for today's weather
+          //forwthr - small icon for forecast x3
+          //////////////
+          
+          
+          
+          //todays weather large icon find and draw//
+          auto wthrs = curwthr.find(id(weather).state);
+          if (wthrs != curwthr.end()) {
+            it.image(id(weather_x), id(weather_y), (wthrs->second));
+          } else {
+            it.image(id(weather_x), id(weather_y), id(exceptional));
+          }
+          
+          //small icon find and draw 3x for 3 forecast days//
+          auto fore1 = forwthr.find(id(forecast_1).state);
+          ESPTime tm1 = esphome::time::ESPTime::from_epoch_local((id(homeassistant_time).now()).timestamp+86400);
+          it.printf(id(forecast1_x)-85, id(forecast1_y)+25, id(segoe_large), TextAlign::CENTER_LEFT, "%.0f°F", id(outdoor_forecast1).state);
+          it.strftime((id(forecast1_x)-85), (id(forecast1_y)+45), id(segoe_large), TextAlign::TOP_CENTER, "%a", tm1);
+          if (fore1 != forwthr.end()) {
+            it.image((id(forecast1_x)-140), id(forecast1_y), (fore1->second));
+          } else {
+            it.image((id(forecast1_x)-140), id(forecast1_y), id(exceptional_small));
+          }
+
+          auto fore2 = forwthr.find(id(forecast_2).state);
+          ESPTime tm2 = esphome::time::ESPTime::from_epoch_local((id(homeassistant_time).now()).timestamp+(86400*2));
+          it.printf(id(forecast1_x)+55, id(forecast1_y)+25, id(segoe_large), TextAlign::CENTER_LEFT, "%.0f°F", id(outdoor_forecast2).state);
+          it.strftime((id(forecast1_x)+55), (id(forecast1_y)+45), id(segoe_large), TextAlign::TOP_CENTER, "%a", tm2);
+          if (fore2 != forwthr.end()) {
+            it.image(id(forecast1_x), id(forecast1_y), (fore2->second));
+          } else {
+            it.image(id(forecast1_x), id(forecast1_y), id(exceptional_small));
+          }
+          
+          auto fore3 = forwthr.find(id(forecast_3).state);
+          ESPTime tm3 = esphome::time::ESPTime::from_epoch_local((id(homeassistant_time).now()).timestamp+(86400*3));
+          it.printf(id(forecast1_x)+195, id(forecast1_y)+25, id(segoe_large), TextAlign::CENTER_LEFT, "%.0f°F", id(outdoor_forecast3).state);
+          it.strftime((id(forecast1_x)+195), (id(forecast1_y)+45), id(segoe_large), TextAlign::TOP_CENTER, "%a", tm3);
+          if (fore3 != forwthr.end()) {
+            it.image((id(forecast1_x)+140), id(forecast1_y), (fore3->second));
+          } else {
+            it.image((id(forecast1_x)+140), id(forecast1_y), id(exceptional_small));
+          }
+
+          //NOTIFICATIONS//
+
+          //count up the number of notifications to display
+          double notif_count = 0;
+          double debug_count = 0;
+          for (int i = 0; i < id(sensor_count); i++) {
+              if (id(&notif_sensor[i])->state) {
+              notif_count ++;
+            }
+          }
+
+          //figure out how many columns need to be used for notifications
+          
+          int icon_columns = 1;
+          bool size_flag = false;
+          if (notif_count > 0) {
+            if (notif_count > 2) {
+              icon_columns = 2;
+            }
+            if (notif_count > 4) {
+              icon_columns = 3;
+            }
+            if (notif_count > 6) {
+              icon_columns = 4;
+            }
+          }
+          
+          int printed_count = 0;
+          int notif_x_offset = 15;
+          int column_y_offset = 75;
+          int col_width = id(screen_r)/3;
+          //print icons in the right place
+          
+          for (int j=0; j < id(sensor_count); j++) {
+            if (id(&notif_sensor[j])->state) {
+              it.image(id(screen_l)+notif_x_offset+(col_width*(printed_count / 2)), (id(notif_t)+30)+column_y_offset*(printed_count % 2), id(&notif_icon[j]));
+              it.printf(id(screen_l)+notif_x_offset+60+(col_width*(printed_count / 2)), (id(notif_t)+40)+column_y_offset*(printed_count % 2), id(segoe_large), "%s" ,id(&notif_text[j]).c_str());
+              printed_count++;
+            }
+          }
+
+      - id: town_news
+
+        lambda: |- 
+          /////////////////
+          //WEATHER ICONS//
+          /////////////////
+          
+          //large weather icon map//
+          std::map<std::string, esphome::display::Image*> curwthr;
+          curwthr["clear-night"] = id(clear_night);
+          curwthr["cloudy"] = id(cloudy);
+          curwthr["fog"] = id(fog);
+          curwthr["hail"] = id(hail);
+          curwthr["lightning"] = id(lightning);
+          curwthr["lightning-rainy"] = id(lightning_rainy);
+          curwthr["partlycloudy"] = id(partly_cloudy);
+          curwthr["pouring"] = id(pouring);
+          curwthr["rainy"] = id(rainy);
+          curwthr["snowy"] = id(snowy);
+          curwthr["snowy-rainy"] = id(snowy_rainy);
+          curwthr["sunny"] = id(sunny);
+          curwthr["windy"] = id(windy);
+          curwthr["windy-varient"] = id(windy);
+          
+          //small weather icon map//
+          std::map<std::string, esphome::display::Image*> forwthr;
+          forwthr["clear-night"] = id(clear_night_small);
+          forwthr["cloudy"] = id(cloudy_small);
+          forwthr["fog"] = id(fog_small);
+          forwthr["hail"] = id(hail_small);
+          forwthr["lightning"] = id(lightning_small);
+          forwthr["lightning-rainy"] = id(lightning_rainy_small);
+          forwthr["partlycloudy"] = id(partly_cloudy_small);
+          forwthr["pouring"] = id(pouring_small);
+          forwthr["rainy"] = id(rainy_small);
+          forwthr["snowy"] = id(snowy_small);
+          forwthr["snowy-rainy"] = id(snowy_rainy_small);
+          forwthr["sunny"] = id(sunny_small);
+          forwthr["windy"] = id(windy_small);
+          forwthr["windy-varient"] = id(windy_small);
+          
+          /////////////////////
+          //Notification Maps//
+          /////////////////////
+          
+          //notification sensor map//
+          esphome::binary_sensor::BinarySensor* notif_sensor[id(sensor_count)] = {
+            trash_day,
+            recycle_day,
+            washer_state,
+            dryer_state,
+            high_pollen_alert,
+          };
+
+          //notification phrasing//
+          std::string notif_text[id(sensor_count)] = {
+            "Trash Day",
+            "Recycling Day",
+            "Clothes Washed",
+            "Clothes Dry",
+            "High Pollen",
+          };
+
+          //notification icons//
+          esphome::display::Image* notif_icon[id(sensor_count)] = {
+            trash,
+            recycle,
+            washer_on,
+            dryer_on,
+            pollen,
+          };
+          
+          //news headlines//
+          esphome::text_sensor::TextSensor* town_headlines[3] = {
+            town_headline_1,
+            town_headline_2,
+            town_headline_3,
+          };
+
+          ////////////////////
+          //DISPLAY PRINTING//
+          ////////////////////
+          //TIME AND DATE//
+          it.strftime((id(weather_x)+160), (id(weather_y)+100), id(segoe_bold), TextAlign::BOTTOM_LEFT, "%I:%M", id(homeassistant_time).now());
+          it.strftime((id(weather_x)+160), (id(weather_y)+85), id(segoe_large), TextAlign::TOP_LEFT, "%A, %b %d", id(homeassistant_time).now());
+        
+          //NOTIFICATION AREA DEFINITION//
+          it.printf(20, 275, id(segoe_large), TextAlign::CENTER_LEFT, "Town News");
+          it.line(id(screen_l)+205, id(notif_t)-1, id(screen_r), id(notif_t)-1);
+          it.line(id(screen_l)+205, id(notif_t), id(screen_r), id(notif_t));
+          //TEMPERATURE
+          it.printf(id(screen_r)-300, (id(weather_y)+125), id(segoe_bold), TextAlign::BOTTOM_LEFT, "In:");
+          it.printf(id(screen_r)-20, (id(weather_y)+125), id(segoe_bold), TextAlign::BOTTOM_RIGHT, "%.0f°F", id(kitchen_temp).state);
+          it.printf(id(screen_r)-300, id(forecast1_y)-30, id(segoe_bold), TextAlign::TOP_LEFT, "Out:");
+          it.printf(id(screen_r)-20, id(forecast1_y)-30, id(segoe_bold), TextAlign::TOP_RIGHT, "%.0f°F", id(outdoor_temp).state);
+          
+          /*
+          NOTIFICATION BAR
+          */
+          
+          //Wifi Icon
+          if (id(wifi_strength).state < -70) {
+          it.image(id(not_bar_x), id(not_bar_y), id(wifi_1));
+          } if (id(wifi_strength).state < -60) {
+            it.image(id(not_bar_x), id(not_bar_y), id(wifi_2));
+          } if (id(wifi_strength).state < -50) {
+            it.image(id(not_bar_x), id(not_bar_y), id(wifi_3));
+          } else {
+            it.image(id(not_bar_x), id(not_bar_y), id(wifi_0));
+          }
+          
+          //www.thespire.us uplink
+          if (id(uplink)) {
+            it.image(id(not_bar_x)-29, id(not_bar_y), id(ha_icon));
+          }  else {
+            it.image(id(not_bar_x)-29, id(not_bar_y), id(ha_alert));
+          }   
+          
+
+        
+          /*
+          WEATHER SECTION
+          curweather - large icon for today's weather
+          forwthr - small icon for forecast x3
+          */
+          
+          
+          
+          //large icon find and draw
+          auto wthrs = curwthr.find(id(weather).state);
+          if (wthrs != curwthr.end()) {
+            it.image(id(weather_x), id(weather_y), (wthrs->second));
+          } else {
+            it.image(id(weather_x), id(weather_y), id(exceptional));
+          }
+          
+          //small icon find and draw 3x for 3 forecast days
+          auto fore1 = forwthr.find(id(forecast_1).state);
+          ESPTime tm1 = esphome::time::ESPTime::from_epoch_local((id(homeassistant_time).now()).timestamp+86400);
+          it.printf(id(forecast1_x)-85, id(forecast1_y)+25, id(segoe_large), TextAlign::CENTER_LEFT, "%.0f°F", id(outdoor_forecast1).state);
+          it.strftime((id(forecast1_x)-85), (id(forecast1_y)+45), id(segoe_large), TextAlign::TOP_CENTER, "%a", tm1);
+          if (fore1 != forwthr.end()) {
+            it.image((id(forecast1_x)-140), id(forecast1_y), (fore1->second));
+          } else {
+            it.image((id(forecast1_x)-140), id(forecast1_y), id(exceptional_small));
+          }
+
+          auto fore2 = forwthr.find(id(forecast_2).state);
+          ESPTime tm2 = esphome::time::ESPTime::from_epoch_local((id(homeassistant_time).now()).timestamp+(86400*2));
+          it.printf(id(forecast1_x)+55, id(forecast1_y)+25, id(segoe_large), TextAlign::CENTER_LEFT, "%.0f°F", id(outdoor_forecast2).state);
+          it.strftime((id(forecast1_x)+55), (id(forecast1_y)+45), id(segoe_large), TextAlign::TOP_CENTER, "%a", tm2);
+          if (fore2 != forwthr.end()) {
+            it.image(id(forecast1_x), id(forecast1_y), (fore2->second));
+          } else {
+            it.image(id(forecast1_x), id(forecast1_y), id(exceptional_small));
+          }
+          
+          auto fore3 = forwthr.find(id(forecast_3).state);
+          ESPTime tm3 = esphome::time::ESPTime::from_epoch_local((id(homeassistant_time).now()).timestamp+(86400*3));
+          it.printf(id(forecast1_x)+195, id(forecast1_y)+25, id(segoe_large), TextAlign::CENTER_LEFT, "%.0f°F", id(outdoor_forecast3).state);
+          it.strftime((id(forecast1_x)+195), (id(forecast1_y)+45), id(segoe_large), TextAlign::TOP_CENTER, "%a", tm3);
+          if (fore3 != forwthr.end()) {
+            it.image((id(forecast1_x)+140), id(forecast1_y), (fore3->second));
+          } else {
+            it.image((id(forecast1_x)+140), id(forecast1_y), id(exceptional_small));
+          }
+          
+          //NEWS//
+          std::string s = "No News to Report";
+          int row_width = 40;
+          int i = 0;
+          for (i=0; i < 3; i++) {
+            s = id(&town_headlines[i])->state;
+            it.printf(id(screen_l)+15, id(notif_t)+50+(row_width*i), id(segoe_med), TextAlign::CENTER_LEFT, "%s", s.c_str());
+          }
+          
+
+
+interval:
+  - interval: 300s
+    then:
+      - if:
+          condition:
+            or:
+              - binary_sensor.is_on: trash_day
+              - binary_sensor.is_on: recycle_day
+              - binary_sensor.is_on: washer_state
+              - binary_sensor.is_on: dryer_state
+              - binary_sensor.is_on: high_pollen_alert
+          then:
+            - display.page.show_next: epaper
+            - component.update: epaper
+          else:
+            - display.page.show: town_news
+
+
