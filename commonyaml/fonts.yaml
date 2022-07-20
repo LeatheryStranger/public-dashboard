@@ -1,0 +1,13 @@
+font:
+
+  - file: "fonts/arial.ttf"
+    id: segoe
+    size: 10
+    
+  - file: "fonts/segoe-ui.ttf"
+    id: segoe_large
+    size: 28
+  
+  - file: "fonts/segoe-ui-bold.ttf"
+    id: segoe_bold
+    size: 64

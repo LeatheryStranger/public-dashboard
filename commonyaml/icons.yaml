@@ -1,0 +1,215 @@
+image:
+
+  - file: "icons/wifi-strength-outline.png"
+    id: wifi_0
+    resize: ${wifi_size}
+
+  - file: "icons/wifi-strength-1.png"
+    id: wifi_1
+    resize: ${wifi_size}
+    
+  - file: "icons/wifi-strength-3.png"
+    id: wifi_3
+    resize: ${wifi_size}
+    
+  - file: "icons/wifi-strength-4.png"
+    id: wifi_4
+    resize: ${wifi_size}
+    
+  - file: "icons/wifi-strength-2.png"
+    id: wifi_2
+    resize: ${wifi_size}
+    
+  - file: "icons/washing-machine-on.png"
+    id: washer_on
+    resize: ${washdry_size}
+      
+  - file: "icons/washing-machine-off.png"
+    id: washer_off
+    resize: ${washdry_size}
+    
+  - file: "icons/tumble-dryer-off.png"
+    id: dryer_off
+    resize: ${washdry_size}
+    
+  - file: "icons/tumble-dryer-on.png"
+    id: dryer_on
+    resize: ${washdry_size}
+    
+  - file: "icons/thermometer.png"
+    id: thermometer_14
+    #resize: 14x14
+    
+  - file: "icons/water-percent.png"
+    id: humid_14
+    #resize: 14x14
+    
+  - file: "icons/clear-night.png"
+    id: clear_night_small
+    resize: ${weather_size_small}
+    
+  - file: "icons/cloudy.png"
+    id: cloudy_small
+    resize: ${weather_size_small}
+    
+  - file: "icons/fog.png"
+    id: fog_small
+    resize: ${weather_size_small}
+    
+  - file: "icons/hail.png"
+    id: hail_small
+    resize: ${weather_size_small}
+    
+  - file: "icons/lightning.png"
+    id: lightning_small
+    resize: ${weather_size_small}
+    
+  - file: "icons/lightning-rainy.png"
+    id: lightning_rainy_small
+    resize: ${weather_size_small}
+    
+  - file: "icons/partly-cloudy.png"
+    id: partly_cloudy_small
+    resize: ${weather_size_small}
+    
+  - file: "icons/pouring.png"
+    id: pouring_small
+    resize: ${weather_size_small}
+    
+  - file: "icons/rainy.png"
+    id: rainy_small
+    resize: ${weather_size_small}
+    
+  - file: "icons/snowy.png"
+    id: snowy_small
+    resize: ${weather_size_small}
+    
+  - file: "icons/snowy-rainy.png"
+    id: snowy_rainy_small
+    resize: ${weather_size_small}
+    
+  - file: "icons/sunny.png"
+    id: sunny_small
+    resize: ${weather_size_small}
+    
+  - file: "icons/windy.png"
+    id: windy_small
+    resize: ${weather_size_small}
+    
+  - file: "icons/exceptional.png"
+    id: exceptional_small
+    resize: ${weather_size_small}
+    
+  - file: "icons/clear-night.png"
+    id: clear_night
+    resize: ${weather_size}
+    
+  - file: "icons/cloudy.png"
+    id: cloudy
+    resize: ${weather_size}
+    
+  - file: "icons/fog.png"
+    id: fog
+    resize: ${weather_size}
+    
+  - file: "icons/hail.png"
+    id: hail
+    resize: ${weather_size}
+    
+  - file: "icons/lightning.png"
+    id: lightning
+    resize: ${weather_size}
+    
+  - file: "icons/lightning-rainy.png"
+    id: lightning_rainy
+    resize: ${weather_size}
+    
+  - file: "icons/partly-cloudy.png"
+    id: partly_cloudy
+    resize: ${weather_size}
+    
+  - file: "icons/pouring.png"
+    id: pouring
+    resize: ${weather_size}
+    
+  - file: "icons/rainy.png"
+    id: rainy
+    resize: ${weather_size}
+    
+  - file: "icons/snowy.png"
+    id: snowy
+    resize: ${weather_size}
+    
+  - file: "icons/snowy-rainy.png"
+    id: snowy_rainy
+    resize: ${weather_size}
+    
+  - file: "icons/sunny.png"
+    id: sunny
+    resize: ${weather_size}
+    
+  - file: "icons/windy.png"
+    id: windy
+    resize: ${weather_size}
+    
+  - file: "icons/exceptional.png"
+    id: exceptional
+    resize: ${weather_size}
+    
+  - file: "icons/trash-can.png"
+    id: trash
+    resize: ${trash_size}
+    
+  - file: "icons/trash-can.png"
+    id: trash_icon
+    resize: ${wifi_size}
+    
+  - file: "icons/recycle.png"
+    id: recycle
+    resize: ${trash_size}
+    
+  - file: "icons/recycle.png"
+    id: recycle_icon
+    resize: ${wifi_size}
+
+  - file: "icons/home-assistant.png"
+    id: ha_icon
+    resize: ${ha_size}
+    
+  - file: "icons/home-alert.png"
+    id: ha_alert
+    resize: ${ha_size}
+    
+  - file: "icons/tree-outline.png"
+    id: tree_outline
+    resize: ${trash_size}
+    
+  - file: "icons/blur.png"
+    id: blur
+    resize: ${trash_size}
+    
+  - file: "icons/grass.png"
+    id: grass
+    resize: ${trash_size}
+    
+  - file: "icons/sprout.png"
+    id: sprout
+    resize: ${trash_size}
+    
+  - file: "icons/tree-outline.png"
+    id: tree_outline_icon
+    resize: ${wifi_size}
+    
+  - file: "icons/blur.png"
+    id: blur_icon
+    resize: ${wifi_size}
+    
+  - file: "icons/grass.png"
+    id: grass_icon
+    resize: ${wifi_size}
+    
+  - file: "icons/sprout.png"
+    id: sprout_icon
+    resize: ${wifi_size}
+            
+
